@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
+const AuthService = require('../services/authService');
 const { generateToken } = require('../utils/jwt');
 
 /**
@@ -21,10 +22,10 @@ const register = async (req, res, next) => {
 
     const { name, email, phone, password } = req.body;
 
-    // Check if user already exists
-    const normalizedEmail = email.toLowerCase().trim();
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
+    // Check if user already exists via AuthService
+    const normalizedEmail = email ? email.toLowerCase().trim() : '';
+    const isTaken = await AuthService.isEmailTaken(normalizedEmail);
+    if (isTaken) {
       return res.status(400).json({
         success: false,
         message: 'A user with this email address already exists'
@@ -86,10 +87,10 @@ const login = async (req, res, next) => {
     }
 
     const { email, password } = req.body;
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = email ? email.toLowerCase().trim() : '';
 
-    // Find user including passwordHash for verification
-    const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash');
+    // Find user including passwordHash for verification via AuthService
+    const user = await AuthService.findUserWithPasswordByEmail(normalizedEmail);
 
     if (!user) {
       // Use uniform message to prevent user enumeration

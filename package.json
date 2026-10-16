@@ -8,7 +8,8 @@
     "server:start": "npm --prefix Server start",
     "client": "npm --prefix Client run dev",
     "test:server": "npm --prefix Server test",
-    "seed:admin": "npm --prefix Server run seed:admin"
+    "seed:admin": "npm --prefix Server run seed:admin",
+    "reset:admin": "npm --prefix Server run reset:admin"
   },
   "keywords": [
     "hotelpro",

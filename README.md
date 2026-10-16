@@ -161,6 +161,22 @@ ADMIN_NAME="<Your Admin Name>" ADMIN_EMAIL="<your-admin-email@domain.com>" ADMIN
 
 > **Idempotency Note**: If an administrator with that email already exists, the script halts safely without altering the existing administrator's password.
 
+### Administrator Password Reset Procedure
+
+If you ever need to reset or repair the password for an existing administrator account:
+
+```bash
+cd Server
+npm run reset:admin
+```
+
+Or provide credentials via environment variables:
+
+**PowerShell (Windows)**:
+```powershell
+$env:ADMIN_EMAIL="<your-admin-email@domain.com>"; $env:ADMIN_PASSWORD="<YourNewSecurePassword>"; npm run reset:admin
+```
+
 ---
 
 ## 6. Local Development Workflow

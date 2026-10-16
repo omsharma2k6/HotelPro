@@ -76,6 +76,7 @@ const seedAdmin = async () => {
     if (existingUser) {
       console.log(`User with email '${normalizedEmail}' already exists (Current Role: ${existingUser.role}).`);
       console.log('To prevent accidental security overrides, existing administrator passwords were not altered.');
+      console.log('To securely reset the password for this administrator, run: npm run reset:admin');
       await mongoose.connection.close();
       process.exit(0);
     }
