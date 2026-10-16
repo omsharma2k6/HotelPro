@@ -151,12 +151,12 @@ Alternatively, credentials can be passed via environment variables:
 
 **PowerShell (Windows)**:
 ```powershell
-$env:ADMIN_NAME="Hotel Administrator"; $env:ADMIN_EMAIL="admin@hotelpro.local"; $env:ADMIN_PASSWORD="AdminPassword2026!"; $env:ADMIN_PHONE="+15559876543"; npm run seed:admin
+$env:ADMIN_NAME="<Your Admin Name>"; $env:ADMIN_EMAIL="<your-admin-email@domain.com>"; $env:ADMIN_PASSWORD="<YourSecurePassword>"; $env:ADMIN_PHONE="<YourPhoneNumber>"; npm run seed:admin
 ```
 
 **Bash / macOS / Linux**:
 ```bash
-ADMIN_NAME="Hotel Administrator" ADMIN_EMAIL="admin@hotelpro.local" ADMIN_PASSWORD="AdminPassword2026!" ADMIN_PHONE="+15559876543" npm run seed:admin
+ADMIN_NAME="<Your Admin Name>" ADMIN_EMAIL="<your-admin-email@domain.com>" ADMIN_PASSWORD="<YourSecurePassword>" ADMIN_PHONE="<YourPhoneNumber>" npm run seed:admin
 ```
 
 > **Idempotency Note**: If an administrator with that email already exists, the script halts safely without altering the existing administrator's password.

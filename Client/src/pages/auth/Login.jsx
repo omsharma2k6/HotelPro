@@ -50,12 +50,6 @@ const Login = () => {
     }
   };
 
-  const fillAdminCredentials = () => {
-    setEmail('admin@hotelpro.local');
-    setPassword('AdminPassword2026!');
-    setError('');
-  };
-
   return (
     <div className="container py-5 my-auto">
       <div className="row justify-content-center">
@@ -153,23 +147,6 @@ const Login = () => {
                 )}
               </button>
             </form>
-
-            {/* Demo Autofill Hint */}
-            <div
-              className="p-3 rounded mb-3"
-              style={{ background: 'rgba(212, 175, 55, 0.08)', border: '1px dashed rgba(212, 175, 55, 0.3)' }}
-            >
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="small text-white-50">Need quick testing credentials?</span>
-                <button
-                  type="button"
-                  onClick={fillAdminCredentials}
-                  className="btn btn-link btn-sm p-0 text-warning text-decoration-none fw-semibold"
-                >
-                  Fill Seeded Admin
-                </button>
-              </div>
-            </div>
 
             {/* Footer Navigation */}
             <div className="text-center text-secondary small">
