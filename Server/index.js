@@ -9,6 +9,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { connectDB, isDbConnected } = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const staffRoutes = require('./routes/staffRoutes');
 const errorHandler = require('./middleware/errorMiddleware');
 const notFoundHandler = require('./middleware/notFoundMiddleware');
 
@@ -45,6 +50,11 @@ app.get('/api/health', (req, res) => {
 
 // Mount API v1 Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/rooms', roomRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/staff', staffRoutes);
 
 // Catch-all 404 handler for unrecognized routes
 app.use(notFoundHandler);

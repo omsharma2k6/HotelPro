@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
+import apiClient from '../../api/axios';
+import StatusBadge from '../../components/StatusBadge';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import {
   FaUserCheck,
   FaBed,
@@ -14,6 +17,29 @@ import {
 
 const GuestDashboard = () => {
   const { user } = useAuth();
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMyBookings = async () => {
+      try {
+        const res = await apiClient.get('/api/v1/bookings/my');
+        if (res.data?.bookings) {
+          setBookings(res.data.bookings);
+        }
+      } catch (err) {
+        console.error('Error loading guest bookings:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyBookings();
+  }, []);
+
+  const activeBookings = bookings.filter((b) =>
+    ['confirmed', 'pending', 'checked_in'].includes(b.bookingStatus)
+  );
 
   return (
     <div className="container py-4">
@@ -33,8 +59,11 @@ const GuestDashboard = () => {
               Manage your upcoming hospitality stays, browse luxury suites, and view exclusive member benefits.
             </p>
             <div className="d-flex flex-wrap gap-2">
-              <Link to="/#rooms-preview" className="btn btn-gold btn-sm">
+              <Link to="/#suites-collection" className="btn btn-gold btn-sm">
                 Browse Suites <FaArrowRight size={12} />
+              </Link>
+              <Link to="/my-bookings" className="btn btn-outline-gold btn-sm">
+                View My Bookings ({bookings.length})
               </Link>
             </div>
           </div>
@@ -56,7 +85,10 @@ const GuestDashboard = () => {
       <div className="row g-3 mb-4">
         <div className="col-md-4">
           <div className="stat-card">
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(212, 175, 55, 0.15)', color: 'var(--hotel-gold)' }}>
+            <div
+              className="stat-icon-wrapper"
+              style={{ background: 'rgba(212, 175, 55, 0.15)', color: 'var(--hotel-gold)' }}
+            >
               <FaAward />
             </div>
             <div>
@@ -68,19 +100,27 @@ const GuestDashboard = () => {
 
         <div className="col-md-4">
           <div className="stat-card">
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(20, 184, 166, 0.15)', color: '#2DD4BF' }}>
+            <div
+              className="stat-icon-wrapper"
+              style={{ background: 'rgba(20, 184, 166, 0.15)', color: '#2DD4BF' }}
+            >
               <FaCalendarCheck />
             </div>
             <div>
-              <div className="text-secondary small">Active Bookings</div>
-              <div className="fs-4 fw-bold text-white">0 Upcoming</div>
+              <div className="text-secondary small">Active Stays</div>
+              <div className="fs-4 fw-bold text-white">
+                {loading ? '...' : `${activeBookings.length} Active`}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="col-md-4">
           <div className="stat-card">
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#A78BFA' }}>
+            <div
+              className="stat-icon-wrapper"
+              style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#A78BFA' }}
+            >
               <FaConciergeBell />
             </div>
             <div>
@@ -91,27 +131,65 @@ const GuestDashboard = () => {
         </div>
       </div>
 
-      {/* Module 2 Roadmap Preview Card */}
+      {/* Upcoming Bookings Section */}
       <div className="glass-panel p-4 mb-4">
-        <div className="d-flex align-items-center gap-2 mb-3">
-          <FaBed style={{ color: 'var(--hotel-gold)' }} size={20} />
-          <h4 className="font-serif-luxury text-white mb-0">Upcoming Bookings & Stays</h4>
-        </div>
-
-        <div
-          className="p-4 rounded text-center my-2"
-          style={{ background: 'rgba(7, 11, 25, 0.5)', border: '1px dashed rgba(212, 175, 55, 0.25)' }}
-        >
-          <FaInfoCircle className="text-warning mb-2" size={28} />
-          <h5 className="text-white mb-1">No Active Reservations Found</h5>
-          <p className="text-secondary small mx-auto mb-3" style={{ maxWidth: '500px' }}>
-            Full suite selection, date-overlap verification, and dynamic reservation workflows are part of
-            <strong> Module 2 (Booking Engine & Room Inventory)</strong>.
-          </p>
-          <Link to="/#rooms-preview" className="btn btn-outline-gold btn-sm">
-            Preview Suites in Module 1
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div className="d-flex align-items-center gap-2">
+            <FaBed style={{ color: 'var(--hotel-gold)' }} size={20} />
+            <h4 className="font-serif-luxury text-white mb-0">Upcoming Bookings & Stays</h4>
+          </div>
+          <Link to="/my-bookings" className="btn btn-outline-gold btn-sm">
+            View All
           </Link>
         </div>
+
+        {loading ? (
+          <LoadingSpinner message="Loading your stays..." size="sm" />
+        ) : bookings.length === 0 ? (
+          <div
+            className="p-4 rounded text-center my-2"
+            style={{ background: 'rgba(7, 11, 25, 0.5)', border: '1px dashed rgba(212, 175, 55, 0.25)' }}
+          >
+            <FaInfoCircle className="text-warning mb-2" size={28} />
+            <h5 className="text-white mb-1">No Active Reservations Found</h5>
+            <p className="text-secondary small mx-auto mb-3" style={{ maxWidth: '500px' }}>
+              Experience world-class luxury accommodations with our live booking engine.
+            </p>
+            <Link to="/#suites-collection" className="btn btn-outline-gold btn-sm">
+              Explore Available Suites
+            </Link>
+          </div>
+        ) : (
+          <div className="d-flex flex-column gap-2">
+            {bookings.slice(0, 3).map((b) => (
+              <div
+                key={b._id}
+                className="p-3 rounded d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2"
+                style={{ background: 'rgba(7, 11, 25, 0.5)', border: '1px solid rgba(212, 175, 55, 0.15)' }}
+              >
+                <div>
+                  <div className="text-white fw-bold">
+                    {b.room?.roomNumber || 'Suite'} — {b.room?.roomType || 'Deluxe'}
+                  </div>
+                  <div className="text-secondary small">
+                    {new Date(b.checkInDate).toLocaleDateString()} to{' '}
+                    {new Date(b.checkOutDate).toLocaleDateString()} ({b.totalNights} nights)
+                  </div>
+                </div>
+
+                <div className="d-flex align-items-center gap-3">
+                  <span className="fs-5 fw-bold" style={{ color: 'var(--hotel-gold)' }}>
+                    ${b.totalAmount}
+                  </span>
+                  <StatusBadge type="booking" status={b.bookingStatus} />
+                  <Link to="/my-bookings" className="btn btn-outline-gold btn-sm py-1 px-2">
+                    Details
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Profile & Security Details */}
@@ -159,7 +237,7 @@ const GuestDashboard = () => {
               </div>
               <div className="d-flex justify-content-between small text-white-50 mt-2">
                 <span>Authorized Endpoints:</span>
-                <span className="text-white">GET /api/v1/auth/me</span>
+                <span className="text-white">/api/v1/bookings/my, /api/v1/auth/me</span>
               </div>
             </div>
           </div>

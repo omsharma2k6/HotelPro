@@ -60,7 +60,7 @@ const bookingSchema = new mongoose.Schema(
     bookingStatus: {
       type: String,
       enum: {
-        values: ['pending', 'confirmed', 'cancelled', 'checked_in', 'checked_out'],
+        values: ['pending', 'confirmed', 'cancelled', 'checked_in', 'checked_out', 'completed'],
         message: '{VALUE} is not a valid booking status'
       },
       default: 'pending'
@@ -72,6 +72,27 @@ const bookingSchema = new mongoose.Schema(
         message: '{VALUE} is not a valid payment status'
       },
       default: 'unpaid'
+    },
+    specialRequests: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    cancellationReason: {
+      type: String,
+      default: null
+    },
+    cancelledAt: {
+      type: Date,
+      default: null
+    },
+    checkInTime: {
+      type: Date,
+      default: null
+    },
+    checkOutTime: {
+      type: Date,
+      default: null
     }
   },
   {

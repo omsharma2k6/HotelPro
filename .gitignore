@@ -20,6 +20,7 @@ Client/.env
 # Production build outputs
 dist/
 build/
+Client/dist/
 
 # Logs
 logs/
@@ -37,6 +38,32 @@ coverage/
 # Uploaded assets (preserve .gitkeep)
 Server/uploads/*
 !Server/uploads/.gitkeep
+
+# Database and data lock files
+*.lock
+mongod.lock
+storage.bson
+diagnostic.data/
+
+# Binaries, debugging symbols, and installers
+*.pdb
+mongod.pdb
+*.exe
+*.dll
+*.so
+*.dylib
+*.msi
+
+# Model weights and large binary caches
+weights.bin
+*.weights
+*.safetensors
+*.onnx
+
+# Temporary files
+*.tmp
+*.temp
+*~
 
 # Operating System and IDE files
 .DS_Store

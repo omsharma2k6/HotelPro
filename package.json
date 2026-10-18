@@ -7,8 +7,11 @@
     "server": "npm --prefix Server run dev",
     "server:start": "npm --prefix Server start",
     "client": "npm --prefix Client run dev",
+    "build:client": "npm --prefix Client run build",
+    "test": "npm --prefix Server test",
     "test:server": "npm --prefix Server test",
     "seed:admin": "npm --prefix Server run seed:admin",
+    "seed:rooms": "npm --prefix Server run seed:rooms",
     "reset:admin": "npm --prefix Server run reset:admin"
   },
   "keywords": [

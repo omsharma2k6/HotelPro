@@ -68,9 +68,9 @@ const Footer = () => {
               Hospitality Modules
             </h6>
             <ul className="list-unstyled small text-secondary d-flex flex-column gap-2 mb-0">
-              <li className="text-white-50">✓ Module 1: Foundation & Auth</li>
-              <li className="text-muted">○ Module 2: Booking Engine & Rooms</li>
-              <li className="text-muted">○ Module 3: Advanced Portals & Reports</li>
+              <li className="text-success">✓ Module 1: Foundation & Auth</li>
+              <li className="text-success">✓ Module 2: Booking Engine & Inventory</li>
+              <li className="text-success">✓ Module 3: Frontend Integration & Portals</li>
             </ul>
           </div>
 

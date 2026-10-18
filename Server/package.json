@@ -7,6 +7,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "seed:admin": "node utils/seedAdmin.js",
+    "seed:rooms": "node utils/seedRooms.js",
     "reset:admin": "node utils/resetAdminPassword.js",
     "test": "jest --runInBand --detectOpenHandles --forceExit"
   },

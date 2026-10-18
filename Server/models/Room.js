@@ -65,6 +65,14 @@ const roomSchema = new mongoose.Schema(
       },
       default: 'available'
     },
+    housekeepingStatus: {
+      type: String,
+      enum: {
+        values: ['clean', 'dirty', 'inspected', 'cleaning_in_progress'],
+        message: '{VALUE} is not a valid housekeeping status'
+      },
+      default: 'clean'
+    },
     isActive: {
       type: Boolean,
       default: true

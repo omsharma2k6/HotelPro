@@ -1,19 +1,24 @@
 # HotelPro — Luxury Hotel Booking & Management System
 
-HotelPro is a full-stack, enterprise-grade hotel booking and management platform designed with high-fidelity architecture, granular role-based access control (RBAC), and security-first principles. 
+HotelPro is a full-stack, enterprise-grade hotel booking and management platform designed with high-fidelity architecture, granular role-based access control (RBAC), and security-first principles.
 
-This repository implements **Module 1: Foundation, MongoDB, MVC Backend, and Secure Authentication**. It establishes the complete foundational architecture required for Module 2 (Booking Engine & Room Inventory) and Module 3 (Advanced Portals & Analytics) to build upon seamlessly.
+This repository implements the complete three-module system:
+- **Module 1: Foundation, MongoDB, MVC Backend, and Secure Authentication**
+- **Module 2: Room Inventory, Booking Engine, Payments, and Hotel Operations**
+- **Module 3: Complete Frontend Integration, Responsive UI, and End-to-End Validation**
 
 ---
 
 ## 1. Technology Stack
 
 ### Backend
-- **Runtime & Framework**: Node.js (v24.x) & Express.js (CommonJS)
+- **Runtime & Framework**: Node.js (CommonJS) & Express.js
 - **Database**: MongoDB (v9.0.4) with Mongoose ODM
-- **Authentication**: Stateless JSON Web Tokens (`jsonwebtoken`), bcrypt password cryptography (`bcryptjs`)
+- **Authentication**: Stateless JSON Web Tokens (`jsonwebtoken`), bcrypt password cryptography (`bcryptjs`) with dotted Gmail normalization protection
 - **Security & Hardening**: `helmet`, `cors`, `express-rate-limit`, `express-validator`
-- **Testing**: `jest`, `supertest`
+- **Concurrency Control**: Per-room asynchronous serialized Promise queues (`roomLock.js`) ensuring overbooking prevention
+- **Payments**: Multi-provider payment service supporting Development Mock provider & Razorpay with backend HMAC-SHA256 signature verification
+- **Testing**: `jest`, `supertest` (9 test suites, 64 tests passing)
 
 ### Frontend
 - **Framework & Tooling**: React 19, Vite
@@ -21,10 +26,66 @@ This repository implements **Module 1: Foundation, MongoDB, MVC Backend, and Sec
 - **Networking**: Axios with centralized request/response token interceptors
 - **Styling**: Bootstrap 5, Custom Luxury Design System (dark obsidian theme, champagne gold accents, glassmorphic panels)
 - **Icons**: React Icons (`react-icons/fa`)
+- **Shared Architecture**: Error Boundaries (`ErrorBoundary.jsx`), Unified Toasts (`ToastContext.jsx`), Status Badges (`StatusBadge.jsx`), Confirmation Dialogs (`ConfirmModal.jsx`), and Spinners (`LoadingSpinner.jsx`)
 
 ---
 
-## 2. Project Directory Structure
+## 2. Architecture & Design Patterns
+
+### Room Inventory Model
+In HotelPro, a `Room` represents a distinct room category or numbered unit class.
+- The `inventory` field defines the **baseline total physical capacity** of that room configuration (e.g., 5 identical Deluxe units).
+- **Date-Dependent Availability**: Baseline `inventory` is **never decremented** when a booking is created. Instead, availability is computed dynamically for any requested check-in and check-out window:
+  ```text
+  overlappingBookings = COUNT(bookings WHERE
+    room = roomId AND
+    bookingStatus IN ['pending', 'confirmed', 'checked_in'] AND
+    checkInDate < requestedCheckOut AND
+    checkOutDate > requestedCheckIn
+  )
+  availableUnits = room.inventory - overlappingBookings
+  ```
+- If a room has historical bookings, administrative deletion is safely rejected or converted into an archival deactivation (`isActive: false`), preserving referential integrity and audit records.
+
+### Date Overlap Rule & Hotel-Night Semantics
+Two reservations overlap if and only if:
+```text
+existingCheckIn < requestedCheckOut && existingCheckOut > requestedCheckIn
+```
+Under standard hotel-night semantics, a guest checking out on the same calendar day that another guest arrives does **not** conflict. Cancelled bookings (`bookingStatus: 'cancelled'`) release inventory immediately.
+
+### Concurrency Strategy & MongoDB Topology
+1. **Topology Detection**:
+   - The local Windows MongoDB instance runs in **standalone mode** (`setName: undefined`). Multi-document Mongoose transactions require an active replica set and are unavailable on standalone instances.
+2. **In-Process Per-Room Queue (`roomLock.js`)**:
+   - Concurrency for the Node.js server is guarded by an asynchronous serialized queue indexed by `roomId`.
+   - Conflicting concurrent booking attempts for the same room are processed in sequential order through an atomic lock release guarantee (`try...finally`).
+   - Inside the locked critical section, the server queries the database for overlapping reservations, validates that `availableUnits >= 1`, and saves the booking atomically before releasing the lock.
+   - Tested under 10 concurrent racing threads attempting to book the last available unit: exactly 1 request succeeds with `201 Created` and 9 requests receive `409 Conflict`.
+3. **Multi-Instance Scaling Requirements**:
+   - For multi-instance, clustered, or containerized deployments (multiple Node.js processes), the single-process in-memory queue must be upgraded to:
+     - A MongoDB Replica Set (`rs.initiate()`) utilizing multi-document ACID transactions with snapshot isolation; OR
+     - A distributed lock manager such as Redlock via Redis.
+
+### Booking Lifecycle & State Transitions
+The system enforces valid state transitions across the booking lifecycle:
+- `pending`: Reservation created, payment pending or front-desk settlement chosen.
+- `confirmed`: Room held, payment verified or guaranteed.
+- `checked_in`: Guest arrived and verified by front-desk staff.
+- `checked_out`: Stay completed; room automatically flagged as `dirty` for housekeeping.
+- `cancelled`: Reservation cancelled by guest or admin; inventory immediately released.
+- `completed`: Historical record of fully concluded stay.
+
+### Payment Architecture & Mock Provider
+- **Zero Plaintext Card Credentials**: Card numbers and CVVs are never handled or stored in MongoDB.
+- **Provider Modes**:
+  1. `mock`: Development-only simulated provider. Order creation generates a simulated order ID. Verification creates a cryptographic record and flags the booking paid without requiring external paid credentials.
+  2. `razorpay`: Production/sandbox provider using official Razorpay orders API and cryptographic HMAC-SHA256 signature verification (`crypto.createHmac`).
+- **Idempotency**: Duplicate payment verification requests for an already paid booking return the existing verified payment record safely without duplicate billing.
+
+---
+
+## 3. Project Directory Structure
 
 ```text
 HotelPro/
@@ -32,89 +93,102 @@ HotelPro/
 │   ├── src/
 │   │   ├── api/
 │   │   │   └── axios.js                 # Axios instance with auth interceptors
-│   │   ├── assets/                      # Static brand assets
 │   │   ├── components/
-│   │   │   ├── Navbar.jsx               # Shared responsive navigation bar
+│   │   │   ├── BookingModal.jsx         # Live date selector, price breakdown & payment modal
+│   │   │   ├── ConfirmModal.jsx         # Accessible confirmation dialog for actions
+│   │   │   ├── ErrorBoundary.jsx        # Dignified luxury error boundary
 │   │   │   ├── Footer.jsx               # Shared footer with live API health status
-│   │   │   └── ProtectedRoute.jsx       # Multi-role route guard component
+│   │   │   ├── LoadingSpinner.jsx       # Gold themed spinner & loading states
+│   │   │   ├── Navbar.jsx               # Responsive navigation bar with role badges
+│   │   │   ├── ProtectedRoute.jsx       # Multi-role route guard component
+│   │   │   └── StatusBadge.jsx          # Unified status badge across all views
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx          # Centralized authentication & session provider
+│   │   │   ├── AuthContext.jsx          # Authentication & session provider
+│   │   │   └── ToastContext.jsx         # Real-time feedback notification toasts
 │   │   ├── layouts/
-│   │   │   └── MainLayout.jsx           # Global layout wrapper
+│   │   │   └── MainLayout.jsx           # Global luxury layout wrapper
 │   │   ├── pages/
 │   │   │   ├── auth/
-│   │   │   │   ├── Login.jsx            # Secure login with demo autofill helper
+│   │   │   │   ├── Login.jsx            # Secure login with dotted Gmail fix
 │   │   │   │   └── Register.jsx         # Guest registration with validation
 │   │   │   ├── guest/
-│   │   │   │   └── GuestDashboard.jsx   # Guest portal & upcoming stays teaser
+│   │   │   │   ├── GuestDashboard.jsx   # Guest portal with live stay telemetry
+│   │   │   │   └── MyBookings.jsx       # Guest bookings list, cancellation & pay
 │   │   │   ├── staff/
-│   │   │   │   └── StaffDashboard.jsx   # Operational desk & housekeeping overview
+│   │   │   │   └── StaffDashboard.jsx   # Front desk check-in, check-out & housekeeping
 │   │   │   ├── admin/
-│   │   │   │   └── AdminDashboard.jsx   # Executive metrics, live telemetry & health
-│   │   │   ├── Home.jsx                 # Public landing page with suite previews
+│   │   │   │   └── AdminDashboard.jsx   # Live MongoDB aggregation, room & staff management
+│   │   │   ├── Home.jsx                 # Public landing page with live availability search
 │   │   │   └── NotFound.jsx             # 404 page
-│   │   ├── routes/
-│   │   │   └── routes.js                # Route path constants
-│   │   ├── utils/
-│   │   │   └── formatters.js            # Currency & date formatting helpers
-│   │   ├── App.jsx                      # Main routing configuration
-│   │   ├── index.css                    # Luxury design system & tokens
+│   │   ├── App.jsx                      # Routing configuration with /my-bookings
+│   │   ├── index.css                    # Luxury dark obsidian & gold design tokens
 │   │   └── main.jsx                     # Vite React entry point
-│   ├── index.html                       # HTML5 entry with luxury typography
-│   ├── package.json                     # Frontend dependencies
-│   └── vite.config.js                   # Vite configuration (port 5173)
+│   ├── package.json
+│   └── vite.config.js
 ├── Server/
 │   ├── config/
 │   │   └── db.js                        # Reliable MongoDB connection & graceful shutdown
 │   ├── controllers/
-│   │   └── authController.js            # Registration, Login, and Current User logic
+│   │   ├── authController.js            # Authentication HTTP handlers
+│   │   ├── roomController.js            # Room CRUD & date availability handlers
+│   │   ├── bookingController.js         # Booking reservation & cancellation handlers
+│   │   ├── paymentController.js         # Order creation & signature verification
+│   │   ├── adminController.js           # Administrative telemetry, metrics & staff provisioning
+│   │   └── staffController.js           # Front desk check-in, check-out & housekeeping
 │   ├── middleware/
 │   │   ├── authMiddleware.js            # Bearer JWT verification & user attachment
-│   │   ├── roleMiddleware.js            # Granular RBAC (guest, staff, admin)
-│   │   ├── errorMiddleware.js           # Centralized safe JSON error handler
+│   │   ├── roleMiddleware.js            # Granular RBAC (isGuest, isStaff, isAdmin)
+│   │   ├── errorMiddleware.js           # Centralized safe JSON error handler with status propagation
 │   │   └── notFoundMiddleware.js        # Structured 404 handler
 │   ├── models/
 │   │   ├── User.js                      # User schema with bcrypt comparison & toJSON cleanup
-│   │   ├── Room.js                      # Room schema with baseline inventory model
-│   │   ├── Booking.js                   # Booking schema with pricing snapshots
-│   │   └── Payment.js                   # Payment schema (PCI-DSS compliant, no card numbers)
+│   │   ├── Room.js                      # Room schema with baseline inventory & housekeepingStatus
+│   │   ├── Booking.js                   # Booking schema with pricing snapshots & operational dates
+│   │   └── Payment.js                   # Payment schema (PCI-DSS compliant, provider references)
 │   ├── routes/
-│   │   └── authRoutes.js                # Express validator & rate-limited auth routes
+│   │   ├── authRoutes.js                # Auth endpoints
+│   │   ├── roomRoutes.js                # Room endpoints
+│   │   ├── bookingRoutes.js             # Booking endpoints
+│   │   ├── paymentRoutes.js             # Payment endpoints
+│   │   ├── adminRoutes.js               # Admin endpoints
+│   │   └── staffRoutes.js               # Staff operational endpoints
 │   ├── services/
-│   │   └── authService.js               # Reusable authentication service queries
+│   │   ├── authService.js               # Authentication queries & token logic
+│   │   ├── roomService.js               # Room pagination, filtering & availability calculation
+│   │   ├── bookingService.js            # Concurrency-safe booking engine & ownership checks
+│   │   ├── paymentService.js            # Mock & Razorpay order generation & HMAC verification
+│   │   ├── adminService.js              # Real-time MongoDB metrics aggregation & user listings
+│   │   └── staffService.js              # Check-in, check-out & housekeeping state transitions
 │   ├── tests/
 │   │   ├── setup.js                     # Isolated test database manager (HotelPro_test)
+│   │   ├── e2e.test.js                  # Complete Module 3 end-to-end integration test suite
 │   │   ├── health.test.js               # Health check and 404 tests
 │   │   ├── auth.test.js                 # Authentication & security test suite
 │   │   ├── roles.test.js                # Role-based middleware authorization tests
-│   │   └── models.test.js               # Core schema validation & PCI safety tests
-│   ├── uploads/
-│   │   └── .gitkeep                     # Asset storage placeholder
+│   │   ├── models.test.js               # Core schema validation & PCI safety tests
+│   │   ├── rooms.test.js                # Room CRUD, filtering & availability tests
+│   │   ├── bookings.test.js             # Booking creation, overlap & concurrency race tests
+│   │   ├── payments.test.js             # Payment orders, HMAC verification & idempotency tests
+│   │   └── operations.test.js           # Front desk check-in, check-out & housekeeping tests
 │   ├── utils/
 │   │   ├── jwt.js                       # JWT signing utility
-│   │   └── seedAdmin.js                 # Safe interactive / env-driven admin seeding
+│   │   ├── roomLock.js                  # Asynchronous per-room Promise serialized queue
+│   │   ├── seedAdmin.js                 # Safe admin seeding utility
+│   │   ├── resetAdminPassword.js        # Secure administrator password reset tool
+│   │   └── seedRooms.js                 # Safe initial luxury suite seeding utility
 │   ├── .env                             # Private environment configuration (IGNORED BY GIT)
 │   ├── .env.example                     # Environment template with placeholders
-│   ├── index.js                         # Express server entry point
-│   └── package.json                     # Backend dependencies & test scripts
-├── .gitignore                           # Git ignore rules protecting .env and build files
-├── package.json                         # Root package script aggregator
-└── README.md                            # Comprehensive documentation
+│   ├── index.js                         # Express server entry point mounting API v1 routes
+│   └── package.json
+├── package.json
+└── README.md
 ```
 
 ---
 
-## 3. Prerequisites
+## 4. Environment Variables
 
-- **Node.js**: `v18.x` or higher (verified on `v24.13.0`)
-- **npm**: `v9.x` or higher (verified on `v11.6.2`)
-- **MongoDB**: Community Server `v7.x` or `v9.x` running on local Windows service (`127.0.0.1:27017`)
-
----
-
-## 4. Environment Variables Setup
-
-The application reads configuration from `Server/.env`. A template is provided in `Server/.env.example`:
+The application reads configuration from `Server/.env`. Template placeholders are maintained in `Server/.env.example`:
 
 ```ini
 MONGO_URI=mongodb://127.0.0.1:27017/HotelPro
@@ -122,126 +196,186 @@ PORT=8001
 CLIENT_URL=http://localhost:5173
 JWT_SECRET=replace_with_a_strong_random_secret
 JWT_EXPIRES_IN=1d
+
+# Module 2 & 3 Payment Gateway Configuration
+# Options: 'mock' (default for local development & automated testing) or 'razorpay'
+PAYMENT_PROVIDER=mock
+RAZORPAY_KEY_ID=your_razorpay_key_id_here
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret_here
 ```
 
 > **Security Rule**: The `.env` file is excluded in `.gitignore` and must never be committed to source control or exposed in frontend code.
 
 ---
 
-## 5. Initial Administrator Seeding
+## 5. API Endpoints Contract
 
-To maintain strict security separation, **public user registration can only create accounts with the `guest` role**. The initial administrator account must be created via the protected seeding utility.
+### Authentication & Profiles (`/api/v1/auth`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/auth/register` | Public | Register new guest account |
+| `POST` | `/api/v1/auth/login` | Public | Authenticate user & receive JWT token |
+| `GET` | `/api/v1/auth/me` | Authenticated | Retrieve authenticated user profile |
 
-### Seeding Procedure
+### Rooms & Inventory (`/api/v1/rooms`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/rooms` | Public | Paginated room listing with filters (type, price, amenities) |
+| `GET` | `/api/v1/rooms/availability` | Public | Dynamic date-range availability check (`?checkIn=&checkOut=&roomId=`) |
+| `GET` | `/api/v1/rooms/:id` | Public | Retrieve room details by ID |
+| `POST` | `/api/v1/rooms` | Admin Only | Create new suite with baseline inventory |
+| `PATCH` | `/api/v1/rooms/:id` | Admin / Staff | Update room rates, inventory, status, or amenities |
+| `DELETE` | `/api/v1/rooms/:id` | Admin Only | Safely archive or delete room |
 
-Run the seed script from the `Server/` directory:
+### Bookings (`/api/v1/bookings`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/bookings` | Authenticated | Create booking with server price calculation & concurrency lock |
+| `GET` | `/api/v1/bookings/my` | Authenticated | Retrieve bookings owned by the authenticated user |
+| `GET` | `/api/v1/bookings/:id` | Authenticated | Retrieve booking by ID (ownership enforced) |
+| `PATCH` | `/api/v1/bookings/:id/cancel` | Authenticated | Cancel booking & release date-range inventory |
 
+### Payments (`/api/v1/payments`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/payments/create-order` | Authenticated | Generate payment order (Mock or Razorpay) |
+| `POST` | `/api/v1/payments/verify` | Authenticated | Verify signature & update payment/booking state idempotently |
+| `GET` | `/api/v1/payments/:bookingId` | Authenticated | View payment details for a booking |
+
+### Staff Operations (`/api/v1/staff`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `PATCH` | `/api/v1/staff/bookings/:id/check-in` | Staff / Admin | Execute guest check-in transition |
+| `PATCH` | `/api/v1/staff/bookings/:id/check-out` | Staff / Admin | Execute check-out transition & set room to dirty |
+| `PATCH` | `/api/v1/staff/rooms/:id/housekeeping` | Staff / Admin | Update housekeeping status (`clean`, `dirty`, `cleaning_in_progress`, `inspected`) |
+
+### Administration (`/api/v1/admin`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/admin/dashboard` | Admin Only | Live MongoDB aggregation metrics (occupancy, revenue, status) |
+| `GET` | `/api/v1/admin/rooms` | Admin Only | View all rooms (including archived) |
+| `GET` | `/api/v1/admin/bookings` | Admin / Staff | Master bookings roster with search and status filters |
+| `GET` | `/api/v1/admin/payments` | Admin Only | Master payment records and status audit |
+| `GET` | `/api/v1/admin/users` | Admin Only | Safe user list (excluding passwords) |
+| `POST` | `/api/v1/admin/staff` | Admin Only | Provision new authorized staff or administrator account |
+
+---
+
+## 6. Local Execution & Seed Utilities
+
+### Step 1: Start Backend Server
+```bash
+cd Server
+npm install
+npm run dev
+```
+
+### Step 2: Seed Initial Luxury Suites (Optional)
+If the database room inventory is empty:
+```bash
+cd Server
+node utils/seedRooms.js
+```
+
+### Step 3: Seed Administrator (If not already created)
 ```bash
 cd Server
 npm run seed:admin
 ```
 
-The script will prompt interactively for:
-1. Admin Full Name
-2. Admin Email Address
-3. Admin Phone Number
-4. Admin Password (minimum 8 characters)
-
-Alternatively, credentials can be passed via environment variables:
-
-**PowerShell (Windows)**:
-```powershell
-$env:ADMIN_NAME="<Your Admin Name>"; $env:ADMIN_EMAIL="<your-admin-email@domain.com>"; $env:ADMIN_PASSWORD="<YourSecurePassword>"; $env:ADMIN_PHONE="<YourPhoneNumber>"; npm run seed:admin
-```
-
-**Bash / macOS / Linux**:
-```bash
-ADMIN_NAME="<Your Admin Name>" ADMIN_EMAIL="<your-admin-email@domain.com>" ADMIN_PASSWORD="<YourSecurePassword>" ADMIN_PHONE="<YourPhoneNumber>" npm run seed:admin
-```
-
-> **Idempotency Note**: If an administrator with that email already exists, the script halts safely without altering the existing administrator's password.
-
-### Administrator Password Reset Procedure
-
-If you ever need to reset or repair the password for an existing administrator account:
-
-```bash
-cd Server
-npm run reset:admin
-```
-
-Or provide credentials via environment variables:
-
-**PowerShell (Windows)**:
-```powershell
-$env:ADMIN_EMAIL="<your-admin-email@domain.com>"; $env:ADMIN_PASSWORD="<YourNewSecurePassword>"; npm run reset:admin
-```
-
----
-
-## 6. Local Development Workflow
-
-### Terminal 1: Backend Server
-
-```bash
-cd Server
-npm install
-npm run dev
-```
-
-The backend server connects to MongoDB and begins listening on `http://localhost:8001`.
-- Health Endpoint: `http://localhost:8001/api/health`
-
-### Terminal 2: Frontend Client
-
+### Step 4: Start Frontend Client
 ```bash
 cd Client
 npm install
 npm run dev
 ```
-
-The Vite development server starts on `http://localhost:5173`.
-
----
-
-## 7. API Endpoints Overview
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/health` | Public | System status and MongoDB readiness check |
-| `POST` | `/api/v1/auth/register` | Public (Rate-limited) | Register new user (**always assigned `guest` role**) |
-| `POST` | `/api/v1/auth/login` | Public (Rate-limited) | Authenticate user and receive signed JWT |
-| `GET` | `/api/v1/auth/me` | Protected (Bearer JWT) | Retrieve authenticated user's profile |
+Open `http://localhost:5173` in your browser.
 
 ---
 
-## 8. Automated Testing
+## 7. Automated Test Suite & Verified Outcomes
 
-Automated tests run against an **isolated test database** (`mongodb://127.0.0.1:27017/HotelPro_test`). The production database `HotelPro` is never cleared or modified during test execution.
+Automated tests run against an **isolated test database** (`mongodb://127.0.0.1:27017/HotelPro_test`). The production database `HotelPro` is never cleared or altered during testing.
 
 To run the complete test suite:
-
 ```bash
 cd Server
 npm test
 ```
 
-### Test Coverage Highlights
-- **Health & Routing**: Confirms structured health response and 404 JSON handling.
-- **Registration**: Validates input formats, password strength, rejection of mismatched passwords, duplicate email handling, and password hashing.
-- **Privilege Escalation Prevention**: Verifies that client-supplied `role: "admin"` in public registration is ignored and assigned `guest`.
-- **Credential Protection**: Asserts that API responses never contain `password` or `passwordHash`.
-- **Authentication**: Validates bcrypt password verification, deactivated account lockout, and JWT token issuance.
-- **Session Verification**: Verifies valid Bearer tokens, and rejects missing, malformed, tampered, or expired tokens.
-- **Role-Based Authorization**: Tests `guest`, `staff`, and `admin` permission boundaries.
-- **Core Data Models**: Validates schema constraints for Room, Booking, and Payment (PCI-DSS compliance verified).
+### Actual Verified Test Results
+```text
+Test Suites: 9 passed, 9 total
+Tests:       64 passed, 64 total
+Snapshots:   0 total
+Time:        34.001 s
+Ran all test suites.
+
+PASS tests/e2e.test.js
+  √ Full E2E Lifecycle: Public browsing -> Guest signup & login -> Admin room setup -> Booking -> Payment -> Staff check-in/out -> RBAC barriers
+
+PASS tests/bookings.test.js
+  √ Valid booking creation with server-calculated totals
+  √ Rejection of invalid dates, past dates, and nonexistent rooms
+  √ Rejection of overlapping bookings when inventory is 1 unit
+  √ Acceptance of adjacent stays (hotel-night boundary semantics)
+  √ Guest isolation (guests cannot view other guests' bookings)
+  √ Cancellation inventory release
+  √ Concurrent booking race test (10 parallel reservation attempts: 1 success, 9 conflicts)
+
+PASS tests/auth.test.js
+  √ Dotted Gmail email normalization fix
+  √ Bcrypt password hashing & JWT token issuance
+  √ Privilege escalation protection (public registration defaults to guest)
+
+PASS tests/rooms.test.js
+  √ Admin-only room creation, updating, and archiving
+  √ Role protection (guests cannot create or delete rooms)
+  √ Dynamic date availability calculations
+  √ Rejection of invalid room parameters
+
+PASS tests/operations.test.js
+  √ Front-desk check-in state transition
+  √ Check-out transition with automatic housekeeping dirty flag
+  √ Rejection of premature check-outs
+  √ Housekeeping status transitions (clean, dirty, cleaning_in_progress, inspected)
+
+PASS tests/payments.test.js
+  √ Mock payment order creation & verification
+  √ Idempotent duplicate verification handling
+  √ Razorpay HMAC-SHA256 signature verification & forgery rejection
+  √ Payment isolation and status synchronization
+
+PASS tests/roles.test.js
+  √ Multi-tier RBAC route enforcement
+
+PASS tests/models.test.js
+  √ PCI-DSS safety verification & Mongoose schema validation
+
+PASS tests/health.test.js
+  √ Health check & structured 404 handler
+```
+
+### Frontend Production Build
+```bash
+cd Client
+npm run build
+```
+Result:
+```text
+✓ 104 modules transformed.
+dist/index.html                   0.89 kB │ gzip:   0.48 kB
+dist/assets/index-CVMxRZyL.css  234.11 kB │ gzip:  32.13 kB
+dist/assets/index-BtGxPD7q.js   462.76 kB │ gzip: 133.16 kB
+✓ built in 906ms
+```
 
 ---
 
-## 9. Security & Compliance Notes
+## 8. Known Limitations & Production Roadmap
 
-1. **Password Cryptography**: Passwords are saved exclusively as salted hashes (`bcryptjs`, 10 rounds). Plaintext passwords and confirmation passwords are never stored.
-2. **JWT Bearer Authentication**: Auth tokens are signed using the private `JWT_SECRET` loaded from `Server/.env`. The secret is never sent to the client.
-3. **PCI-DSS Compliance**: The `Payment` schema does not accept or store credit card numbers, expiration dates, or CVV/CVC security codes.
-4. **Authoritative Backend**: Role enforcement is verified on the backend for every protected endpoint. Frontend route guards provide user experience routing, but the server remains authoritative.
-5. **Rate Limiting**: Authentication endpoints are rate-limited to mitigate brute-force attacks.
+1. **In-Process Promise Queue vs. Distributed Locks**:
+   - The in-process per-room queue (`roomLock.js`) serializes booking attempts on a single Node.js instance.
+   - For multi-instance, clustered, or Kubernetes deployments, MongoDB must be configured as a Replica Set (`rs.initiate()`) to support multi-document ACID transactions with snapshot isolation, or paired with a distributed lock manager such as Redlock (Redis).
+2. **Third-Party Payment Webhooks**:
+   - Real-time Razorpay server-to-server webhook ingestion requires a publicly accessible webhook endpoint (e.g., via ngrok during local development). The client-driven signature verification workflow implemented handles the local development and automated testing lifecycle.

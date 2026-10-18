@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaCrown, FaSignOutAlt, FaUserCircle, FaBed, FaHome, FaShieldAlt, FaConciergeBell } from 'react-icons/fa';
+import { FaCrown, FaSignOutAlt, FaUserCircle, FaBed, FaHome, FaShieldAlt, FaConciergeBell, FaCalendarCheck } from 'react-icons/fa';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -67,33 +67,40 @@ const Navbar = () => {
               </NavLink>
             </li>
             <li className="nav-item">
-              <a href="#rooms-preview" className="nav-link-custom">
+              <a href="/#suites-collection" className="nav-link-custom">
                 <FaBed className="me-1 mb-1" /> Suites
               </a>
             </li>
 
             {/* Role-governed Dashboard Links */}
             {isAuthenticated && (
-              <li className="nav-item">
-                <NavLink
-                  to={getDashboardRoute()}
-                  className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}
-                >
-                  {user.role === 'admin' ? (
-                    <>
-                      <FaShieldAlt className="me-1 mb-1 text-warning" /> Admin Console
-                    </>
-                  ) : user.role === 'staff' ? (
-                    <>
-                      <FaConciergeBell className="me-1 mb-1 text-info" /> Staff Desk
-                    </>
-                  ) : (
-                    <>
-                      <FaUserCircle className="me-1 mb-1 text-success" /> Guest Portal
-                    </>
-                  )}
-                </NavLink>
-              </li>
+              <>
+                <li className="nav-item">
+                  <NavLink to="/my-bookings" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
+                    <FaCalendarCheck className="me-1 mb-1" /> My Bookings
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    to={getDashboardRoute()}
+                    className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}
+                  >
+                    {user.role === 'admin' ? (
+                      <>
+                        <FaShieldAlt className="me-1 mb-1 text-warning" /> Admin Console
+                      </>
+                    ) : user.role === 'staff' ? (
+                      <>
+                        <FaConciergeBell className="me-1 mb-1 text-info" /> Staff Desk
+                      </>
+                    ) : (
+                      <>
+                        <FaUserCircle className="me-1 mb-1 text-success" /> Guest Portal
+                      </>
+                    )}
+                  </NavLink>
+                </li>
+              </>
             )}
           </ul>
 
