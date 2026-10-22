@@ -179,22 +179,21 @@ HotelPro/
 │   ├── .env                             # Private environment configuration (IGNORED BY GIT)
 │   ├── .env.example                     # Environment template with placeholders
 │   ├── index.js                         # Express server entry point mounting API v1 routes
-├── Project_Documentation/
-│   ├── README.md                        # Documentation index
-│   ├── Ideation Phase/
-│   │   └── 1_Ideation_Phase.pdf
-│   ├── Requirement Analysis/
-│   │   └── 2_Requirement_Analysis.pdf
-│   ├── Project Design Phase/
-│   │   └── 3_Project_Design_Phase.pdf
-│   ├── Project Planning Phase/
-│   │   └── 4_Project_Planning_Phase.pdf
-│   ├── Project Development Phase/
-│   │   └── 5_Project_Development_Phase.pdf
-│   ├── Performance Testing/
-│   │   └── 6_Performance_Testing.pdf
-│   └── Documentation and Demo/
-│       └── 7_Documentation_and_Demo.pdf
+│   └── package.json
+├── 1 Ideation Phase/
+│   └── 1_Ideation_Phase.pdf
+├── 2 Requirement Analysis/
+│   └── 2_Requirement_Analysis.pdf
+├── 3 Project Design Phase/
+│   └── 3_Project_Design_Phase.pdf
+├── 4 Project Planning Phase/
+│   └── 4_Project_Planning_Phase.pdf
+├── 5 Project Development Phase/
+│   └── 5_Project_Development_Phase.pdf
+├── 6 Performance Testing/
+│   └── 6_Performance_Testing.pdf
+├── 7 Documentation and Demo/
+│   └── 7_Documentation_and_Demo.pdf
 ├── package.json
 └── README.md
 ```
@@ -401,10 +400,10 @@ dist/assets/index-BtGxPD7q.js   462.76 kB │ gzip: 133.16 kB
 
 Comprehensive stage-wise project documentation PDFs with architecture diagrams, flowcharts, schemas, traceability matrices, test checklists, and runbooks:
 
-1. [Ideation Phase](Project_Documentation/Ideation%20Phase/1_Ideation_Phase.pdf) — Project vision, problem statements, market positioning, target personas, and USP definition.
-2. [Requirement Analysis](Project_Documentation/Requirement%20Analysis/2_Requirement_Analysis.pdf) — Functional and non-functional requirements, RBAC specifications, user stories, and acceptance criteria.
-3. [Project Design Phase](Project_Documentation/Project%20Design%20Phase/3_Project_Design_Phase.pdf) — System architecture, high-level/low-level designs, database ERDs, state machines, and API specifications.
-4. [Project Planning Phase](Project_Documentation/Project%20Planning%20Phase/4_Project_Planning_Phase.pdf) — WBS, sprint schedules, milestones, resource allocation, and risk management plan.
-5. [Project Development Phase](Project_Documentation/Project%20Development%20Phase/5_Project_Development_Phase.pdf) — Coding standards, module implementations, Git branching strategies, and environment configurations.
-6. [Performance Testing](Project_Documentation/Performance%20Testing/6_Performance_Testing.pdf) — Load test scenarios, concurrency race validations, throughput metrics, bottleneck analyses, and optimizations.
-7. [Documentation and Demo](Project_Documentation/Documentation%20and%20Demo/7_Documentation_and_Demo.pdf) — User manuals, operational SOPs, API reference catalogs, demo runbooks, and submission readiness checklist.
+1. [1 Ideation Phase](1%20Ideation%20Phase/1_Ideation_Phase.pdf) — Project vision, problem statements, market positioning, target personas, and USP definition.
+2. [2 Requirement Analysis](2%20Requirement%20Analysis/2_Requirement_Analysis.pdf) — Functional and non-functional requirements, RBAC specifications, user stories, and acceptance criteria.
+3. [3 Project Design Phase](3%20Project%20Design%20Phase/3_Project_Design_Phase.pdf) — System architecture, high-level/low-level designs, database ERDs, state machines, and API specifications.
+4. [4 Project Planning Phase](4%20Project%20Planning%20Phase/4_Project_Planning_Phase.pdf) — WBS, sprint schedules, milestones, resource allocation, and risk management plan.
+5. [5 Project Development Phase](5%20Project%20Development%20Phase/5_Project_Development_Phase.pdf) — Coding standards, module implementations, Git branching strategies, and environment configurations.
+6. [6 Performance Testing](6%20Performance%20Testing/6_Performance_Testing.pdf) — Load test scenarios, concurrency race validations, throughput metrics, bottleneck analyses, and optimizations.
+7. [7 Documentation and Demo](7%20Documentation%20and%20Demo/7_Documentation_and_Demo.pdf) — User manuals, operational SOPs, API reference catalogs, demo runbooks, and submission readiness checklist.
