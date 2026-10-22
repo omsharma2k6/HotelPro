@@ -179,7 +179,22 @@ HotelPro/
 │   ├── .env                             # Private environment configuration (IGNORED BY GIT)
 │   ├── .env.example                     # Environment template with placeholders
 │   ├── index.js                         # Express server entry point mounting API v1 routes
-│   └── package.json
+├── Project_Documentation/
+│   ├── README.md                        # Documentation index
+│   ├── Ideation Phase/
+│   │   └── 1_Ideation_Phase.pdf
+│   ├── Requirement Analysis/
+│   │   └── 2_Requirement_Analysis.pdf
+│   ├── Project Design Phase/
+│   │   └── 3_Project_Design_Phase.pdf
+│   ├── Project Planning Phase/
+│   │   └── 4_Project_Planning_Phase.pdf
+│   ├── Project Development Phase/
+│   │   └── 5_Project_Development_Phase.pdf
+│   ├── Performance Testing/
+│   │   └── 6_Performance_Testing.pdf
+│   └── Documentation and Demo/
+│       └── 7_Documentation_and_Demo.pdf
 ├── package.json
 └── README.md
 ```
@@ -379,3 +394,17 @@ dist/assets/index-BtGxPD7q.js   462.76 kB │ gzip: 133.16 kB
    - For multi-instance, clustered, or Kubernetes deployments, MongoDB must be configured as a Replica Set (`rs.initiate()`) to support multi-document ACID transactions with snapshot isolation, or paired with a distributed lock manager such as Redlock (Redis).
 2. **Third-Party Payment Webhooks**:
    - Real-time Razorpay server-to-server webhook ingestion requires a publicly accessible webhook endpoint (e.g., via ngrok during local development). The client-driven signature verification workflow implemented handles the local development and automated testing lifecycle.
+
+---
+
+## 9. Project Documentation
+
+Comprehensive stage-wise project documentation PDFs with architecture diagrams, flowcharts, schemas, traceability matrices, test checklists, and runbooks:
+
+1. [Ideation Phase](Project_Documentation/Ideation%20Phase/1_Ideation_Phase.pdf) — Project vision, problem statements, market positioning, target personas, and USP definition.
+2. [Requirement Analysis](Project_Documentation/Requirement%20Analysis/2_Requirement_Analysis.pdf) — Functional and non-functional requirements, RBAC specifications, user stories, and acceptance criteria.
+3. [Project Design Phase](Project_Documentation/Project%20Design%20Phase/3_Project_Design_Phase.pdf) — System architecture, high-level/low-level designs, database ERDs, state machines, and API specifications.
+4. [Project Planning Phase](Project_Documentation/Project%20Planning%20Phase/4_Project_Planning_Phase.pdf) — WBS, sprint schedules, milestones, resource allocation, and risk management plan.
+5. [Project Development Phase](Project_Documentation/Project%20Development%20Phase/5_Project_Development_Phase.pdf) — Coding standards, module implementations, Git branching strategies, and environment configurations.
+6. [Performance Testing](Project_Documentation/Performance%20Testing/6_Performance_Testing.pdf) — Load test scenarios, concurrency race validations, throughput metrics, bottleneck analyses, and optimizations.
+7. [Documentation and Demo](Project_Documentation/Documentation%20and%20Demo/7_Documentation_and_Demo.pdf) — User manuals, operational SOPs, API reference catalogs, demo runbooks, and submission readiness checklist.
